@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Popup</title>
+    <link rel="stylesheet" href="/css/leaflet.css" />
+    <link rel="stylesheet" href="/css/leaflet.draw.css" />
+
+    <style>
+        #map {
+            height: 100vh;
+        }
+
+        #coordinates {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 5px;
+            border: 1px solid black;
+            z-index: 1000;
+        }
+    </style>
+    <script src="/js/leaflet.js"></script>
+    <script src="/js/leaflet.draw.js"></script>
+
+    <script src="/js/georaster.browser.bundle.min.js"></script>
+    <script src="/js/georaster-layer-for-leaflet.min.js"></script>
+    <script src="/js/chroma.min.js"></script>
+</head>
+
+<body>
+    <div id="coordinates" style="left: 10%;">Click on the map to get coordinates</div>
+    <div id="map"></div>
+
+    <script>
+
+        var map = L.map('map').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var marker;
+        map.on('click', function (e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([lat, lng]).addTo(map);
+            document.getElementById('coordinates').innerHTML = 'Coordinates:<br>  ' + lat + '<br> ' + lng;
+            document.getElementById('coordinates').style.top = '1%';
+            document.getElementById('coordinates').style.left = '80%';
+        });
+
+        function getQueryParam(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+
+        // var url_to_geotiff_file = "/download/1/single_galatas_443.tiff";
+        var url_to_geotiff_file = getQueryParam('geotiff');
+        console.log("url_to_geotiff_file:", url_to_geotiff_file);
+
+        fetch(url_to_geotiff_file)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                parseGeoraster(arrayBuffer).then(georaster => {
+                    console.log("georaster:", georaster);
+                    var min = georaster.mins[0];
+                    var max = georaster.maxs[0];
+                    console.log("min:", min);
+                    console.log("max:", max);
+                    var scale = chroma.scale(['red', 'yellow', 'green']).domain([min, max]);
+
+                    var layer = new GeoRasterLayer({
+                        georaster: georaster,
+                        opacity: 0.8,
+                        pixelValuesToColorFn: values => {
+                            var value = values[0];
+                            if (value < min) {
+                                return 'rgba(0, 0, 0, 0)'; // Transparent
+                            }
+                            return scale(value).hex();
+                        }
+                    });
+                    layer.addTo(map);
+
+                    map.fitBounds(layer.getBounds());
+
+                });
+            });
+
+        // Add Leaflet Draw toolbar
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems
+            },
+            draw: {
+                polygon: true,
+                polyline: true,
+                rectangle: true,
+                circle: true,
+                marker: true
+            }
+        });
+        map.addControl(drawControl);
+        var polylineCount = 0;
+        var polygonCount = 0;
+        var rectangleCount = 0;
+        var circleCount = 0;
+        var markerCount = 0;
+        
+        map.on(L.Draw.Event.CREATED, function (event) {
+            var layer = event.layer;
+            drawnItems.addLayer(layer);
+        });
+
+    </script>
+</body>
+
+</html>

@@ -40,9 +40,14 @@ echo "Processing image ${inFile} and saving to ${outFile}"
 
 # Convert to GeoTiff
 gdal_translate -a_srs EPSG:4326 -a_ullr $west $north $east $south tmp/files/$inFile $outFile
+single_tiff="single_${outFile}"
+gdal_translate -of GTiff -scale $outFile $single_tiff
+
 
 # Remove tmp files
 rm -r tmp/
 
 # Move geotiff to original location
 mv $outFile $outPath
+mv $single_tiff $outPath
+

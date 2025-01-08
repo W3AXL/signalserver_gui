@@ -8,13 +8,15 @@
 {% endblock %} {% block page_header %}
 <h1>{{type.capitalize()}} - {{item.name}}</h1>
 {% endblock %} {% block content %}{{macros.button("Edit", "warning",
-href="/"+type+"/"+item.id|string+"/edit")}} {% if type ==
-"plot"%}{{macros.button("Files",
-"info",href="/"+type+"/"+item.id|string+"/files", outline=False)}}
-{{macros.button("Re-Generate", "primary",
-href="/"+type+"/"+item.id|string+"/generate")}}{% endif %}
+href="/"+type+"/"+item.id|string+"/edit")}} 
+{% if type =="plot"%}
+{{macros.button("Files","info",href="/"+type+"/"+item.id|string+"/files", outline=False)}}
+{{macros.button("Re-Generate", "primary",href="/"+type+"/"+item.id|string+"/generate")}}
+{{macros.button("Show On Map","info",href="/map_popup?geotiff=/download/"+item.id|string+"/single_"+item.name+".tiff", outline=False)}}
+{% endif %}
 {{macros.button("Delete", "danger",
 href="/"+type+"/"+item.id|string+"/delete")}}
+
 <table class="table table-sm table-striped table-hover">
   <thead class="table-dark">
     <th scope="col" style="width: 50%">Parameter</th>

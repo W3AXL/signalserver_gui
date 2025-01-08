@@ -30,6 +30,7 @@ from bottle import (
     run,
     static_file,
 )
+
 from bottle.ext import sqlalchemy
 from sqlalchemy import create_engine, event, literal
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -286,6 +287,10 @@ def delete_item(item_type, id, db):
                         os.path.join("data/antennas", antenna_type, name + ".*")
                     ):
                         os.remove(f)
+                if item_type == "plot":
+                    for f in glob.glob(f"downloads/{id}/*"):
+                        os.remove(f)
+                    os.rmdir(f"downloads/{id}")
             except Exception as e:
                 messages.append(
                     {
@@ -544,6 +549,11 @@ def get_config():
     }
     return template("config.html", parts)
 
+@get("/map_popup")
+def map_popup():
+    """Render the map popup page."""
+    geotiff = request.query.geotiff
+    return template("map_popup.html", geotiff=geotiff)
 
 if __name__ == "__main__":
     if os.path.isfile("config.ini"):

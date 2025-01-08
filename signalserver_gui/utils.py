@@ -7,6 +7,7 @@ import os
 from shlex import quote
 import subprocess
 from zipfile import ZipFile
+import re
 
 import pandas as pd
 from plotly.graph_objects import Figure, Scatter
@@ -44,6 +45,7 @@ def which(program):
 def run(cmd: str, args: list = []) -> str:
     """Execute a command using an external tool."""
     print("Running:", " ".join([cmd, *args]))
+
     try:
         app_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         result = subprocess.run(
@@ -53,6 +55,7 @@ def run(cmd: str, args: list = []) -> str:
             stderr=subprocess.STDOUT,
             check=True,
         )
+        print(result.stdout)
         return result.stdout.decode("utf-8")
     except Exception as e:
         return str(e)
@@ -207,8 +210,16 @@ def generate(config: configparser.ConfigParser, item: Plot) -> str:
     else:
         command = config["signalserver"]["path"]
     # Run signalserver command and capture output for use in kml.
-    dimensions = run(command, command_args).split("|")
-    print(f"Dimension: {dimensions}")
+    # ToDO [info] Loading topo data for boundaries: (35.278673N, 335.795442W) to (35.729327N, 336.346558W)
+    output = run(command, command_args)
+    output_list = output.split('\n')
+    # Regular expression to extract numbers
+    area_bountaries = next((line for line in output_list if "Area boundaries" in line), None)
+    # sample text for area_bountaries: [2025-01-07 00:04:28.533] [info] Area boundaries:35.729000 | 24.205111 | 35.279000 | 23.652889 '
+    numbers = re.findall(r'\d+\.\d+', area_bountaries)
+    # Convert to float for further use (optional)
+    dimensions = [float(num) for num in numbers]
+    print(f"HERE Dimension: {dimensions}")
     run(
         config["convert"]["path"],
         [
@@ -242,7 +253,7 @@ def generate(config: configparser.ConfigParser, item: Plot) -> str:
 
     # Convert kmz to geotiff if path for converter specified
     if config["signalserver"]["kmz_conv_path"]:
-        run(config["signalserver"]["kmz_conv_path"], f"{file_base}.kmz")
+        run(config["signalserver"]["kmz_conv_path"], [f"{file_base}.kmz"])
 
     with ZipFile(quote(f"{file_base}.zip"), "w") as zip:
         for filename in glob.glob(f"{item_path}/*"):

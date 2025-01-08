@@ -33,14 +33,13 @@
       <td class="col-1">{{ item.antenna.name|e|truncate(15) }}</td>
       {% endif %}
       <td class="text-end col-4">
-        {{macros.button("Edit", "warning",
-        href="/"+type+"/"+item.id|string+"/edit")}} {% if type ==
-        "plot"%}{{macros.button("Files",
-        "info",href="/"+type+"/"+item.id|string+"/files", outline=False)}}
-        {{macros.button("Re-Generate", "primary",
-        href="/"+type+"/"+item.id|string+"/generate")}}{% endif %}
-        {{macros.button("Delete", "danger",
-        href="/"+type+"/"+item.id|string+"/delete")}}
+        {{macros.button("Edit", "warning",href="/"+type+"/"+item.id|string+"/edit")}} 
+        {% if type =="plot"%}
+        {{macros.button("Files","info",href="/"+type+"/"+item.id|string+"/files", outline=False)}}
+        {{macros.button("Re-Generate", "primary",href="/"+type+"/"+item.id|string+"/generate")}}
+        {{macros.button("Show On Map","info",href="/map_popup?geotiff=/download/"+item.id|string+"/single_"+item.name+".tiff", outline=False)}}
+        {% endif %}
+        {{macros.button("Delete", "danger", href="/"+type+"/"+item.id|string+"/delete")}}
       </td>
     </tr>
     {% endfor %}
